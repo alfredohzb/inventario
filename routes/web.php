@@ -14,7 +14,6 @@
 Route::get('/', function () {
     return view('welcome');
 });
-<<<<<<< HEAD
 
 Auth::routes();
 
@@ -27,5 +26,7 @@ Route::get('/home', 'HomeController@index')->name('home');
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
-=======
->>>>>>> parent of b92d3fb... Instalacion de componente de Auth - En caso de llegar a ser necesario
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
