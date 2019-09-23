@@ -1882,15 +1882,19 @@ __webpack_require__.r(__webpack_exports__);
   },
   methods: {
     newProduct: function newProduct() {
-      var product = {
-        id: 3,
+      var _this = this;
+
+      var params = {
         nombreProducto: this.nombreProducto,
         sku: this.sku,
         precio: this.precio,
-        stock: this.stock,
-        total: this.stock * this.precio
+        stock: this.stock
       };
-      this.$emit('new', product);
+      axios.post('/products', params).then(function (response) {
+        var product = response.data;
+
+        _this.$emit('new', product);
+      });
       this.resetForm();
     },
     resetForm: function resetForm() {
@@ -1949,28 +1953,92 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
-      products: [{
-        'id': 1,
-        'nombreProducto': "Ejemplo",
-        'sku': "2aq1",
-        'precio': "5000",
-        'stock': "20",
-        'total': "100000"
-      }]
+      products: [],
+      cantidadTotal: 0,
+      actualMax: 0,
+      totalPrecios: 0,
+      cantidadTotalItems: 0,
+      postsData: {
+        per_page: 10,
+        page: 1
+      },
+      pagination: {
+        total: 0
+      }
     };
   },
   mounted: function mounted() {
-    console.log('Component mounted.');
+    var _this2 = this;
+
+    axios.get('/products?per_page' + this.postsData.per_page).then(function (response) {
+      _this2.cantidadTotal = response.data.total;
+      _this2.actualMax = response.data.to;
+      _this2.products = response.data.data;
+
+      _this2.calculateTotal(_this2.products);
+    });
   },
   methods: {
     addProduct: function addProduct(product) {
+      var _this3 = this;
+
       this.products.push(product);
+
+      var _this = this;
+
+      axios.get('/products').then(function (response) {
+        _this3.cantidadTotal = response.data.total;
+        _this3.actualMax = response.data.to;
+
+        _this3.calculateTotal();
+      });
     },
     updateProduct: function updateProduct(index, product) {
       this.products[index] = product;
+      this.calculateTotal();
+    },
+    calculateTotal: function calculateTotal(products) {
+      var result = 0;
+      var cantidadTotalItems = 0;
+      products.forEach(function (element) {
+        cantidadTotalItems += element.stock;
+        result += element.stock * element.precio;
+      });
+      this.cantidadTotalItems = cantidadTotalItems;
+      this.totalPrecios = result;
+    },
+    pageChangeExact: function pageChangeExact(page) {
+      var _this4 = this;
+
+      axios.get('/products?page' + page).then(function (response) {
+        _this4.cantidadTotal = response.data.total;
+        _this4.actualMax = response.data.to;
+        _this4.products = response.data.data;
+
+        _this4.calculateTotal(_this4.products);
+      });
     }
   }
 });
@@ -2013,11 +2081,12 @@ __webpack_require__.r(__webpack_exports__);
   props: ['product'],
   data: function data() {
     return {
-      editMode: false
+      editMode: false,
+      valorTotal: 0
     };
   },
   mounted: function mounted() {
-    console.log('Component mounted.');
+    this.valorTotal = this.product.stock * this.product.precio;
   },
   methods: {
     editProduct: function editProduct() {
@@ -2027,9 +2096,23 @@ __webpack_require__.r(__webpack_exports__);
       this.editMode = false;
     },
     updateProduct: function updateProduct() {
-      this.cancelEdit();
-      this.product.total = this.product.stock * this.product.precio;
-      this.$emit('update', product);
+      var _this = this;
+
+      var params = {
+        nombreProducto: this.product.nombreProducto,
+        sku: this.product.sku,
+        precio: this.product.precio,
+        stock: this.product.stock
+      };
+      axios.put("/products/".concat(this.product.id), params).then(function (response) {
+        _this.cancelEdit();
+
+        var product = response.data;
+
+        _this.$emit('update', product);
+
+        _this.valorTotal = _this.product.stock * _this.product.precio;
+      });
     }
   }
 });
@@ -37510,12 +37593,12 @@ var render = function() {
   return _c("div", { staticClass: "row justify-content-center" }, [
     _c(
       "div",
-      { staticClass: "col-md-10" },
+      { staticClass: "col-md-11" },
       [_c("add-product-component", { on: { new: _vm.addProduct } })],
       1
     ),
     _vm._v(" "),
-    _c("div", { staticClass: "col-md-10" }, [
+    _c("div", { staticClass: "col-md-11" }, [
       _c("div", { staticClass: "card" }, [
         _c("div", { staticClass: "card-header" }, [
           _vm._v("Listado de los productos")
@@ -37539,7 +37622,53 @@ var render = function() {
                 })
               }),
               1
-            )
+            ),
+            _vm._v(" "),
+            _c("tfoot", [
+              _c("tr", [
+                _c("td", [
+                  _vm._v(
+                    "Mostrando " +
+                      _vm._s(_vm.actualMax) +
+                      " de " +
+                      _vm._s(_vm.cantidadTotal)
+                  )
+                ]),
+                _vm._v(" "),
+                _c("td"),
+                _vm._v(" "),
+                _c("td", [
+                  _vm._v("Cantidad Total: " + _vm._s(_vm.cantidadTotalItems))
+                ]),
+                _vm._v(" "),
+                _c("td"),
+                _vm._v(" "),
+                _c("td", [_vm._v("Total Precios: " + _vm._s(_vm.totalPrecios))])
+              ]),
+              _vm._v(" "),
+              _c(
+                "tr",
+                [
+                  _c("b-pagination", {
+                    attrs: {
+                      "total-rows": _vm.pagination.total,
+                      "per-page": _vm.postsData.per_page,
+                      size: "lg",
+                      align: "center"
+                    },
+                    on: { change: _vm.pageChangeExact },
+                    model: {
+                      value: _vm.postsData.page,
+                      callback: function($$v) {
+                        _vm.$set(_vm.postsData, "page", $$v)
+                      },
+                      expression: "postsData.page"
+                    }
+                  })
+                ],
+                1
+              )
+            ])
           ])
         ])
       ])
@@ -37552,7 +37681,7 @@ var staticRenderFns = [
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
     return _c("thead", [
-      _c("tr", [
+      _c("tr", { attrs: { align: "center" } }, [
         _c("th", { attrs: { scope: "col" } }, [_vm._v("Referencia")]),
         _vm._v(" "),
         _c("th", { attrs: { scope: "col" } }, [_vm._v("Nombre")]),
@@ -37589,13 +37718,13 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("tr", [
+  return _c("tr", { attrs: { align: "center" } }, [
     _c("th", { attrs: { scope: "row" } }, [_vm._v(_vm._s(_vm.product.sku))]),
     _vm._v(" "),
     _c("td", [_vm._v(_vm._s(_vm.product.nombreProducto))]),
     _vm._v(" "),
     _vm.editMode
-      ? _c("td", [
+      ? _c("td", { attrs: { align: "center" } }, [
           _c("input", {
             directives: [
               {
@@ -37618,7 +37747,9 @@ var render = function() {
             }
           })
         ])
-      : _c("td", [_vm._v(_vm._s(_vm.product.stock))]),
+      : _c("td", { attrs: { align: "center" } }, [
+          _vm._v(_vm._s(_vm.product.stock))
+        ]),
     _vm._v(" "),
     _vm.editMode
       ? _c("td", [
@@ -37646,7 +37777,9 @@ var render = function() {
         ])
       : _c("td", [_vm._v(_vm._s(_vm.product.precio))]),
     _vm._v(" "),
-    _c("td", [_vm._v(_vm._s(_vm.product.total))]),
+    _c("td", { staticClass: "total", attrs: { align: "center" } }, [
+      _vm._v(_vm._s(_vm.valorTotal))
+    ]),
     _vm._v(" "),
     _c("td", [
       _vm.editMode
@@ -37657,7 +37790,7 @@ var render = function() {
                 staticClass: "btn btn-success",
                 on: {
                   click: function($event) {
-                    return _vm.updateProduct(_vm.product.id)
+                    return _vm.updateProduct()
                   }
                 }
               },

@@ -43,15 +43,16 @@
     },
     methods: {
       newProduct() {
-        let product = {
-          id: 3,
+        const params = {
           nombreProducto: this.nombreProducto,
           sku: this.sku,
           precio: this.precio,
-          stock: this.stock,
-          total: this.stock * this.precio
-        }
-        this.$emit('new', product);
+          stock: this.stock
+        };
+        axios.post('/products', params).then((response) => {
+          const product = response.data;
+          this.$emit('new', product);
+        });
         this.resetForm();
       },
       resetForm() {

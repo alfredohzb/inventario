@@ -1,15 +1,15 @@
 <template>
   <div class="row justify-content-center">
-		<div class="col-md-10">
+		<div class="col-md-11">
 			<add-product-component @new="addProduct"></add-product-component>
 		</div>
-		<div class="col-md-10">
+		<div class="col-md-11">
 			<div class="card">
 				<div class="card-header">Listado de los productos</div>
 				<div class="card-body">
 					<table class="table">
 						<thead>
-							<tr>
+							<tr align="center">
 								<th scope="col">Referencia</th>
 								<th scope="col">Nombre</th>
 								<th scope="col">Cantidad</th>
@@ -26,6 +26,25 @@
                 @update="updateProduct(index, product)"
               ></product-component>
 						</tbody>
+            <tfoot>
+              <tr>
+                <td>Mostrando {{actualMax}} de {{cantidadTotal}}</td>
+                <td></td>
+                <td>Cantidad Total: {{cantidadTotalItems}}</td>
+                <td></td>
+                <td>Total Precios: {{totalPrecios}}</td>
+              </tr>
+              <tr>
+                <b-pagination
+                    :total-rows="pagination.total"
+                    v-model="postsData.page"
+                    :per-page="postsData.per_page"
+                    size="lg"
+                    align="center"
+                    @change="pageChangeExact"
+                  />
+              </tr>
+            </tfoot>
 					</table>
 				</div>
 			</div>
@@ -37,26 +56,60 @@
   export default {
     data() {
       return {
-        products: [{
-          'id': 1,
-          'nombreProducto': "Ejemplo",
-          'sku': "2aq1",
-          'precio': "5000",
-          'stock': "20",
-          'total': "100000"
-        }]
+        products: [],
+        cantidadTotal: 0,
+        actualMax: 0,
+        totalPrecios: 0,
+        cantidadTotalItems: 0,
+        postsData: {
+          per_page: 10,
+          page: 1,
+        },
+        pagination: {
+          total: 0
+        }
       }
     },
     mounted() {
-      console.log('Component mounted.')
+      axios.get('/products?per_page'+this.postsData.per_page).then((response) => {
+        this.cantidadTotal = response.data.total;
+        this.actualMax  = response.data.to;
+        this.products = response.data.data;
+        this.calculateTotal(this.products);
+      });
     },
     methods: {
       addProduct(product){
         this.products.push(product);
+        let _this = this;
+        axios.get('/products').then((response) => {
+          this.cantidadTotal = response.data.total;
+          this.actualMax  = response.data.to;
+          this.calculateTotal();
+        });
       },
       updateProduct(index, product) {
         this.products[index] = product;
-      }
+        this.calculateTotal();
+      },
+      calculateTotal(products) {
+        let result = 0;
+        let cantidadTotalItems = 0;
+        products.forEach(element => {
+          cantidadTotalItems += element.stock;
+          result += (element.stock * element.precio);
+        });
+        this.cantidadTotalItems = cantidadTotalItems;
+        this.totalPrecios = result;
+      },
+      pageChangeExact(page) {
+        axios.get('/products?page'+page).then((response) => {
+          this.cantidadTotal = response.data.total;
+          this.actualMax  = response.data.to;
+          this.products = response.data.data;
+          this.calculateTotal(this.products);
+        });
+      },
     }
   }
 </script>
