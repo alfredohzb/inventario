@@ -39,8 +39,8 @@
                     :total-rows="pagination.total"
                     v-model="postsData.page"
                     :per-page="postsData.per_page"
-                    size="lg"
-                    align="center"
+                    size="sm"
+                    align="right"
                     @change="pageChangeExact"
                   />
               </tr>
@@ -62,17 +62,18 @@
         totalPrecios: 0,
         cantidadTotalItems: 0,
         postsData: {
-          per_page: 10,
+          per_page: 5,
           page: 1,
         },
         pagination: {
-          total: 0
+          total: 2
         }
       }
     },
     mounted() {
-      axios.get('/products?per_page'+this.postsData.per_page).then((response) => {
+      axios.get('/products?per_page='+this.postsData.per_page).then((response) => {
         this.cantidadTotal = response.data.total;
+        this.pagination.total = response.data.total;
         this.actualMax  = response.data.to;
         this.products = response.data.data;
         this.calculateTotal(this.products);
@@ -103,7 +104,7 @@
         this.totalPrecios = result;
       },
       pageChangeExact(page) {
-        axios.get('/products?page'+page).then((response) => {
+        axios.get('/products?page='+page+'&per_page='+this.postsData.per_page).then((response) => {
           this.cantidadTotal = response.data.total;
           this.actualMax  = response.data.to;
           this.products = response.data.data;
